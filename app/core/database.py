@@ -4,15 +4,23 @@ from app.core.config import settings
 
 # 1. IMPORTANTE: Importe o modelo aqui
 from app.models.produto import Produto
+from app.models.cliente import Cliente
+from app.models.pedido import Pedido
+
+# Cliente global do MongoDB
+client: AsyncIOMotorClient = None
+db = None
 
 async def init_db():
+    global client, db
     client = AsyncIOMotorClient(settings.MONGO_URI)
+    db = client[settings.DATABASE_NAME]
     
     await init_beanie(
-        database=client[settings.DATABASE_NAME],
+        database=db,
         document_models=[
-            # 2. Adicione a classe na lista
-            Produto
-            # Futuramente: Cliente, Pedido...
+            Produto,
+            Cliente,
+            Pedido
         ]
     )

@@ -1,0 +1,47 @@
+Lafuente -
+
+Foco: Infraestrutura do projeto, configuração do banco e a Entidade "Independente" (ex: Produto ou Cliente).
+Infraestrutura:
+[ ] Inicializar o projeto com uv init.
+[ ] Configurar pyproject.toml com as libs: fastapi, uvicorn, beanie, motor, pydantic-settings.
+[ ] Criar a conexão com o banco em core/database.py.
+[ ] Criar o arquivo .env e config.py.
+Desenvolvimento (Entidade 1 - ex: Produto):
+[ ] Criar Model Beanie e Schemas Pydantic.
+[ ] Implementar CRUD completo (POST, GET, PUT, DELETE).
+[ ] Implementar Query Tipo C: Busca por texto parcial ($regex) e case-insensitive.
+[ ] Implementar Query Tipo J: Filtro por valor numérico (ex: produtos com preço > X ou nota > Y).
+Entrega:
+[ ] Garantir que o uv.lock está atualizado.
+
+
+
+
+Nicolas
+
+Foco: Entidades que se conectam (Relacionamentos 1:N e N:N) e rotas de associação.
+Desenvolvimento (Entidade 2 e 3 - ex: Cliente e Pedido):
+[ ] Criar Models Beanie utilizando Link ou referências por ID para os relacionamentos.
+[ ] Implementar CRUD completo para ambas.
+[ ] Garantir a lógica de inserção (ex: não criar Pedido sem Cliente existente).
+Queries de Relacionamento:
+[ ] Implementar Query Tipo A: Buscar documento e seus relacionados (ex: Pedido + Dados do Cliente).
+[ ] Implementar Query Tipo B: Listagem filtrada por pai (ex: Todos os pedidos do Cliente X).
+[ ] Implementar Query Tipo G: Consulta complexa envolvendo múltiplas coleções (ex: Produtos comprados pelo Cliente Y).
+Diagrama:
+[ ] Criar o diagrama de classes no README.md usando sintaxe Mermaid.
+
+
+
+Nicolas/Lafuente
+
+Foco: Consultas complexas (Aggregation Pipeline), tratamento de erros e massa de dados.
+Queries Avançadas (Agregações):
+[ ] Implementar Query Tipo D/F: Filtros por Data/Ano (ex: Pedidos feitos em 2024 ou Clientes nascidos em X).
+[ ] Implementar Query Tipo H: Contagem por categoria (ex: Quantidade de produtos por Categoria - usando $group).
+[ ] Implementar Query Tipo I: Contagem de relacionamentos (ex: Média de produtos por pedido).
+Qualidade e Dados:
+[ ] Criar o script seeder.py (usando a lib faker ou dados hardcoded) para gerar 10+ documentos por coleção reais. (Crucial para a entrega).
+[ ] Implementar Tratamento de Exceções Global (ex: retornar 404 amigável se ID não existir, tratar erros de validação).
+[ ] Revisar a documentação no Swagger (adicionar docstrings nas rotas).
+[ ] Escrever o arquivo divisao_tarefas.txt.
