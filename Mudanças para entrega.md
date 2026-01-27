@@ -133,11 +133,41 @@ venv/
 
 **Resumo final de todas as mudanças feitas:**
 
-|Passo|Descrição|Status|
-|---|---|---|
-|1|Gerar [uv.lock](vscode-file://vscode-app/c:/Users/lafue/AppData/Local/Programs/Microsoft%20VS%20Code/resources/app/out/vs/code/electron-browser/workbench/workbench.html)|✅|
-|2|Corrigir import do [Pedido](vscode-file://vscode-app/c:/Users/lafue/AppData/Local/Programs/Microsoft%20VS%20Code/resources/app/out/vs/code/electron-browser/workbench/workbench.html)|✅|
-|3|Mover rota para [analytics_routes.py](vscode-file://vscode-app/c:/Users/lafue/AppData/Local/Programs/Microsoft%20VS%20Code/resources/app/out/vs/code/electron-browser/workbench/workbench.html)|✅|
-|4|Atualizar sintaxe Python moderna|✅|
-|5|Limpar `__pycache__` do Git + atualizar [.gitignore](vscode-file://vscode-app/c:/Users/lafue/AppData/Local/Programs/Microsoft%20VS%20Code/resources/app/out/vs/code/electron-browser/workbench/workbench.html)|✅|
-|6|Melhorar tratamento de exceções|✅|
+| Passo | Descrição                                                                                                                                                                                                      | Status |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| 1     | Gerar [uv.lock](vscode-file://vscode-app/c:/Users/lafue/AppData/Local/Programs/Microsoft%20VS%20Code/resources/app/out/vs/code/electron-browser/workbench/workbench.html)                                      | ✅      |
+| 2     | Corrigir import do [Pedido](vscode-file://vscode-app/c:/Users/lafue/AppData/Local/Programs/Microsoft%20VS%20Code/resources/app/out/vs/code/electron-browser/workbench/workbench.html)                          | ✅      |
+| 3     | Mover rota para [analytics_routes.py](vscode-file://vscode-app/c:/Users/lafue/AppData/Local/Programs/Microsoft%20VS%20Code/resources/app/out/vs/code/electron-browser/workbench/workbench.html)                | ✅      |
+| 4     | Atualizar sintaxe Python moderna                                                                                                                                                                               | ✅      |
+| 5     | Limpar `__pycache__` do Git + atualizar [.gitignore](vscode-file://vscode-app/c:/Users/lafue/AppData/Local/Programs/Microsoft%20VS%20Code/resources/app/out/vs/code/electron-browser/workbench/workbench.html) | ✅      |
+| 6     | Melhorar tratamento de exceções                                                                                                                                                                                | ✅      |
+
+
+## Última mudança:
+
+### Correção: Erro 500 em `/analytics/produtos-por-categoria`
+
+|Item|Descrição|
+|---|---|
+|**Erro encontrado**|`AttributeError: 'Type[Produto]' object has no attribute 'get_motor_collection'`|
+|**Causa raiz**|O Beanie 2.0+ renomeou o método de acesso à coleção do MongoDB|
+|**Arquivo corrigido**|[analytics_routes.py](vscode-file://vscode-app/c:/Users/lafue/AppData/Local/Programs/Microsoft%20VS%20Code/resources/app/out/vs/code/electron-browser/workbench/workbench.html)|
+|**Linhas alteradas**|3 ocorrências (linhas ~15, ~45, ~75)|
+
+### Sintaxe alterada:
+
+# ANTES (Beanie 1.x)
+collection = Produto.get_motor_collection()
+
+# DEPOIS (Beanie 2.x)
+collection = Produto.get_pymongo_collection()
+
+### Por que isso aconteceu:
+
+- O Beanie é o ODM que usamos para conectar o MongoDB com o Pydantic
+- Na versão 2.0, os desenvolvedores renomearam o método para refletir melhor que retorna uma coleção do PyMongo (não do Motor diretamente)
+- O Motor é o driver assíncrono, o PyMongo é a biblioteca base
+
+### Lição aprendida:
+
+Ao atualizar bibliotecas, sempre verificar o **changelog** ou **migration guide** para identificar breaking changes (mudanças que quebram compatibilidade).

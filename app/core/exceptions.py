@@ -5,17 +5,15 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from pymongo.errors import DuplicateKeyError, PyMongoError
 from beanie.exceptions import DocumentNotFound
 
-# 1. Handler para Erros de Validação (Pydantic) - HTTP 422
-# Acontece quando o usuário manda um JSON errado (ex: string no lugar de int)
+
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Handler para erros de validação (HTTP 422)."""
     erros = []
     for error in exc.errors():
-        # Simplifica a mensagem de erro para ficar legível
-        campo = error.get("loc", ["desconhecido"])[-1]  # Pega o nome do campo
+        campo = error.get("loc", ["desconhecido"])[-1]
         tipo = error.get("type", "")
         msg = error.get("msg", "Valor inválido")
         
-        # Mensagens mais amigáveis para erros comuns
         if tipo == "missing":
             erros.append(f"Campo '{campo}' é obrigatório.")
         elif tipo == "string_type":
@@ -24,8 +22,6 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
             erros.append(f"Campo '{campo}' deve ser um número inteiro.")
         elif tipo == "float_type":
             erros.append(f"Campo '{campo}' deve ser um número decimal.")
-        elif "greater_than" in tipo:
-            erros.append(f"Campo '{campo}': {msg}")
         else:
             erros.append(f"Campo '{campo}': {msg}")
 
@@ -38,19 +34,21 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         }
     )
 
-# 2. Handler para Erros HTTP Gerais (404, 403, 400 disparados manualmente)
+
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    """Handler para erros HTTP gerais (400, 404, etc)."""
     return JSONResponse(
         status_code=exc.status_code,
         content={
             "status": "erro",
             "codigo": exc.status_code,
-            "mensagem": exc.detail  # A mensagem que você escreveu no raise HTTPException
+            "mensagem": exc.detail
         }
     )
 
-# 3. Handler para Erros de Duplicidade no MongoDB
+
 async def duplicate_key_exception_handler(request: Request, exc: DuplicateKeyError):
+    """Handler para erros de duplicidade no MongoDB (HTTP 409)."""
     return JSONResponse(
         status_code=status.HTTP_409_CONFLICT,
         content={
@@ -60,28 +58,28 @@ async def duplicate_key_exception_handler(request: Request, exc: DuplicateKeyErr
         }
     )
 
-# 4. Handler para Erros Gerais do MongoDB (conexão, timeout, etc)
+
 async def pymongo_exception_handler(request: Request, exc: PyMongoError):
+    """Handler para erros de conexão com MongoDB (HTTP 503)."""
     print(f"❌ ERRO DE BANCO DE DADOS: {exc}")
     return JSONResponse(
         status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
         content={
             "status": "erro_banco",
-            "mensagem": "Erro de comunicação com o banco de dados. Tente novamente."
+            "mensagem": "Erro de comunicação com o banco de dados."
         }
     )
 
-# 5. Handler Genérico (Caindo aqui, é bug no código ou erro 500)
-# Captura qualquer erro não previsto para o servidor não "quebrar"
+
 async def general_exception_handler(request: Request, exc: Exception):
-    # Aqui você poderia adicionar logs de sistema (sentry, arquivos de log, etc)
-    print(f"❌ ERRO CRÍTICO NÃO TRATADO: {type(exc).__name__}: {exc}") 
+    """Handler genérico para erros não tratados (HTTP 500)."""
+    print(f"❌ ERRO CRÍTICO: {type(exc).__name__}: {exc}") 
     
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
             "status": "erro_interno",
-            "mensagem": "Ocorreu um erro inesperado no servidor. Tente novamente mais tarde."
+            "mensagem": "Ocorreu um erro inesperado no servidor."
         }
     )
 
