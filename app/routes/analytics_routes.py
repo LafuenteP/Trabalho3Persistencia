@@ -93,17 +93,8 @@ async def relatorio_vendas_por_categoria():
         {"$match": {"status": {"$ne": "CANCELADO"}}},
         {"$unwind": "$itens"},
         {
-            "$lookup": {
-                "from": "produtos",
-                "localField": "itens.produto.$id",
-                "foreignField": "_id",
-                "as": "detalhes_produto"
-            }
-        },
-        {"$unwind": "$detalhes_produto"},
-        {
             "$group": {
-                "_id": "$detalhes_produto.categoria",
+                "_id": "$itens.produto.categoria",
                 "total_vendido": {
                     "$sum": {"$multiply": ["$itens.quantidade", "$itens.preco_unitario"]}
                 },
@@ -121,7 +112,9 @@ async def relatorio_vendas_por_categoria():
         }
     ]
 
-    resultado = await Pedido.aggregate(pipeline).to_list()
+    collection = Pedido.get_pymongo_collection()
+    cursor = collection.aggregate(pipeline)
+    resultado = await cursor.to_list(length=None)
     return resultado
 
 

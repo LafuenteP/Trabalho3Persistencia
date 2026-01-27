@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, status
 from beanie import PydanticObjectId, WriteRules
+from beanie.odm.fields import Link
 
 from app.models.pedido import Pedido, ItemPedido
 from app.models.cliente import Cliente
@@ -7,6 +8,19 @@ from app.models.produto import Produto
 from app.schemas.pedido import PedidoCreate, PedidoResponse
 
 router = APIRouter(prefix="/pedidos", tags=["Pedidos"])
+
+
+async def carregar_links_pedido(pedido: Pedido) -> Pedido:
+    """Carrega manualmente os links do pedido (cliente e produtos)."""
+    if isinstance(pedido.cliente, Link):
+        pedido.cliente = await Cliente.get(pedido.cliente.ref.id)
+    
+    for item in pedido.itens:
+        if isinstance(item.produto, Link):
+            item.produto = await Produto.get(item.produto.ref.id)
+    
+    return pedido
+
 
 @router.post("/", response_model=PedidoResponse, status_code=status.HTTP_201_CREATED)
 async def criar_pedido(dados: PedidoCreate):
@@ -44,14 +58,23 @@ async def criar_pedido(dados: PedidoCreate):
     
     return novo_pedido
 
+@router.get("/", response_model=list[PedidoResponse])
+async def listar_pedidos():
+    """Lista todos os pedidos."""
+    pedidos = await Pedido.find_all().to_list()
+    for pedido in pedidos:
+        await carregar_links_pedido(pedido)
+    return pedidos
+
 @router.get("/{id}", response_model=PedidoResponse)
 async def obter_pedido(id: PydanticObjectId):
-    """Obtém um pedido pelo ID, incluindo dados do cliente e produtos."""
-    pedido = await Pedido.get(id, fetch_links=True)
+    """Obtém um pedido pelo ID."""
+    pedido = await Pedido.get(id)
     
     if not pedido:
         raise HTTPException(status_code=404, detail="Pedido não encontrado")
     
+    await carregar_links_pedido(pedido)
     return pedido
 
 @router.get("/cliente/{cliente_id}", response_model=list[PedidoResponse])
@@ -61,6 +84,8 @@ async def listar_pedidos_por_cliente(cliente_id: PydanticObjectId):
     if not cliente:
          raise HTTPException(status_code=404, detail="Cliente não encontrado")
     
-    pedidos = await Pedido.find(Pedido.cliente.id == cliente_id, fetch_links=True).to_list()
+    pedidos = await Pedido.find(Pedido.cliente.id == cliente_id).to_list()
+    for pedido in pedidos:
+        await carregar_links_pedido(pedido)
     
     return pedidos

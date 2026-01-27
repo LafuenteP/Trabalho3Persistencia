@@ -33,7 +33,7 @@ Diagrama:
 
 
 
-Nicolas/Lafuente
+Erica
 
 Foco: Consultas complexas (Aggregation Pipeline), tratamento de erros e massa de dados.
 Queries Avançadas (Agregações):
