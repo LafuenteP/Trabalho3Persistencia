@@ -1,4 +1,3 @@
-from typing import List
 from fastapi import APIRouter, HTTPException, status
 from beanie import PydanticObjectId, WriteRules
 
@@ -66,7 +65,7 @@ async def obter_pedido(id: PydanticObjectId):
     return pedido
 
 # --- REQUISITO B: Listar Pedidos de um Cliente específico ---
-@router.get("/cliente/{cliente_id}", response_model=List[PedidoResponse])
+@router.get("/cliente/{cliente_id}", response_model=list[PedidoResponse])
 async def listar_pedidos_por_cliente(cliente_id: PydanticObjectId):
     # Verificamos se o cliente existe
     cliente = await Cliente.get(cliente_id)

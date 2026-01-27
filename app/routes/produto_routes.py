@@ -1,4 +1,3 @@
-from typing import List, Optional
 from fastapi import APIRouter, HTTPException, status, Query
 from app.models.produto import Produto
 from app.schemas.produto import ProdutoCreate, ProdutoUpdate
@@ -18,12 +17,12 @@ async def criar_produto(dados: ProdutoCreate):
 
 # --- READ (Listar com Filtros de Texto, Categoria e Preço) ---
 # AQUI ESTÁ A MUDANÇA PRINCIPAL
-@router.get("/", response_model=List[Produto])
+@router.get("/", response_model=list[Produto])
 async def listar_produtos(
-    termo: Optional[str] = Query(None, description="Busca por nome (parcial/case-insensitive)"),
-    categoria: Optional[str] = Query(None, description="Filtro exato de categoria"),
-    min_preco: Optional[float] = Query(None, description="Preço mínimo", gt=0),
-    max_preco: Optional[float] = Query(None, description="Preço máximo", gt=0)
+    termo: str | None = Query(None, description="Busca por nome (parcial/case-insensitive)"),
+    categoria: str | None = Query(None, description="Filtro exato de categoria"),
+    min_preco: float | None = Query(None, description="Preço mínimo", gt=0),
+    max_preco: float | None = Query(None, description="Preço máximo", gt=0)
 ):
     """
     Lista produtos. Suporta filtros por Texto, Categoria e Faixa de Preço.

@@ -1,4 +1,3 @@
-from typing import Optional
 from pydantic import BaseModel, EmailStr, Field
 from beanie import PydanticObjectId
 
@@ -16,7 +15,7 @@ class ClienteBase(BaseModel):
     nome: str = Field(..., min_length=2, description="Nome completo do cliente")
     email: EmailStr  # Valida automaticamente se o formato é user@dominio.com
     cpf: str = Field(..., description="CPF do cliente")
-    endereco: Optional[EnderecoSchema] = None
+    endereco: EnderecoSchema | None = None
 
 # 3. Schema para Criação (Input do POST)
 class ClienteCreate(ClienteBase):
@@ -25,10 +24,10 @@ class ClienteCreate(ClienteBase):
 # 4. Schema para Atualização (Input do PUT/PATCH)
 # Aqui tudo é opcional, pois o utilizador pode querer mudar apenas o nome
 class ClienteUpdate(BaseModel):
-    nome: Optional[str] = None
-    email: Optional[EmailStr] = None
-    cpf: Optional[str] = None
-    endereco: Optional[EnderecoSchema] = None
+    nome: str | None = None
+    email: EmailStr | None = None
+    cpf: str | None = None
+    endereco: EnderecoSchema | None = None
 
 # 5. Schema para Resposta (Output do GET)
 class ClienteResponse(ClienteBase):

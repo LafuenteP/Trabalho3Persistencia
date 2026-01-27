@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import List, Optional
 from beanie import Document, Link
 from pydantic import BaseModel, Field
 
@@ -24,7 +23,7 @@ class Pedido(Document):
     data_emissao: datetime = Field(default_factory=datetime.now)
     
     # Lista de itens (Relacionamento N:N com atributos extras)
-    itens: List[ItemPedido]
+    itens: list[ItemPedido]
     
     status: str = Field(default="PENDENTE") # Ex: PENDENTE, PAGO, CANCELADO
     valor_total: float = 0.0

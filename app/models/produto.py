@@ -1,4 +1,3 @@
-from typing import Optional
 from beanie import Document, Indexed
 from pydantic import Field
 from pymongo import IndexModel, TEXT
@@ -6,7 +5,7 @@ from pymongo import IndexModel, TEXT
 class Produto(Document):
     # Indexed() cria um índice no Mongo para deixar as buscas rápidas
     nome: Indexed(str) # type: ignore
-    descricao: Optional[str] = None
+    descricao: str | None = None
     
     # Validação: Preço deve ser maior que 0
     preco: float = Field(gt=0, description="Preço deve ser positivo")

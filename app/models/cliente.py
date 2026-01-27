@@ -1,4 +1,3 @@
-from typing import Optional
 from beanie import Document, Indexed
 from pydantic import BaseModel, Field, EmailStr
 
@@ -19,7 +18,7 @@ class Cliente(Document):
     cpf: Indexed(str, unique=True)   # type: ignore
     
     # O endereço é opcional na criação, mas se vier, segue a estrutura da classe Endereco
-    endereco: Optional[Endereco] = None
+    endereco: Endereco | None = None
 
     class Settings:
         name = "clientes"  # Nome da coleção no MongoDB

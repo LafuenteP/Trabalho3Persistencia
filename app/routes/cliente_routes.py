@@ -1,4 +1,3 @@
-from typing import List
 from fastapi import APIRouter, HTTPException, status
 from beanie import PydanticObjectId
 from pymongo.errors import DuplicateKeyError
@@ -32,7 +31,7 @@ async def criar_cliente(dados: ClienteCreate):
     
     return novo_cliente
 
-@router.get("/", response_model=List[ClienteResponse])
+@router.get("/", response_model=list[ClienteResponse])
 async def listar_clientes():
     """
     Retorna todos os clientes cadastrados.
@@ -40,70 +39,6 @@ async def listar_clientes():
     # .find_all().to_list() converte o cursor do Mongo numa lista Python
     clientes = await Cliente.find_all().to_list()
     return clientes
-
-# ... (outros imports já existentes)
-
-@router.get("/relatorios/vendas-por-categoria")
-async def relatorio_vendas_por_categoria():
-    """
-    REQ G: Consulta complexa envolvendo múltiplas coleções (Pedidos + Produtos).
-    Retorna o total faturado agrupado por categoria de produto.
-    """
-    pipeline = [
-        # 1. Filtra apenas pedidos que não foram cancelados (Boa prática)
-        {
-            "$match": {"status": {"$ne": "CANCELADO"}}
-        },
-        # 2. Desconstrói o array 'itens'. 
-        # Se um pedido tem 3 itens, ele transforma-se em 3 documentos na memória.
-        {
-            "$unwind": "$itens"
-        },
-        # 3. Faz o JOIN com a coleção 'produtos'.
-        # Liga o ID guardado em 'itens.produto.$id' com o '_id' da coleção 'produtos'.
-        {
-            "$lookup": {
-                "from": "produtos",          # Nome da coleção alvo no Mongo
-                "localField": "itens.produto.$id", # Onde está o ID no Pedido
-                "foreignField": "_id",       # Onde está o ID no Produto
-                "as": "detalhes_produto"     # Onde guardar o resultado
-            }
-        },
-        # 4. O $lookup retorna um array (mesmo sendo 1:1), fazemos unwind para o tornar objeto
-        {
-            "$unwind": "$detalhes_produto"
-        },
-        # 5. Agrupa pela Categoria do Produto e soma o valor total
-        {
-            "$group": {
-                "_id": "$detalhes_produto.categoria",
-                "total_vendido": {
-                    "$sum": {
-                        "$multiply": ["$itens.quantidade", "$itens.preco_unitario"]
-                    }
-                },
-                "quantidade_itens": {"$sum": "$itens.quantidade"}
-            }
-        },
-        # 6. (Opcional) Ordena do que vendeu mais para o que vendeu menos
-        {
-            "$sort": {"total_vendido": -1}
-        },
-        # 7. (Opcional) Formata a saída para ficar bonita no JSON
-        {
-            "$project": {
-                "_id": 0,
-                "categoria": "$_id",
-                "total_vendido": 1,
-                "quantidade_itens": 1
-            }
-        }
-    ]
-
-    # Executa a agregação diretamente no modelo Pedido
-    resultado = await Pedido.aggregate(pipeline).to_list()
-    
-    return resultado
 
 @router.get("/{id}", response_model=ClienteResponse)
 async def obter_cliente(id: PydanticObjectId):

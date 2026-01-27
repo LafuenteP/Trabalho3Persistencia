@@ -1,4 +1,3 @@
-from typing import List, Optional
 from datetime import datetime
 from pydantic import BaseModel, Field
 from beanie import PydanticObjectId
@@ -15,14 +14,14 @@ class ItemPedidoCreate(BaseModel):
 
 class PedidoCreate(BaseModel):
     cliente_id: PydanticObjectId
-    itens: List[ItemPedidoCreate]
+    itens: list[ItemPedidoCreate]
 
 # --- OUTPUTS (O que a API devolve) ---
 
 class ItemPedidoResponse(BaseModel):
     # Aqui usamos o ProdutoResponse para mostrar detalhes do produto (nome, etc)
     # ou podemos devolver apenas o ID se preferir. Vamos mostrar detalhes:
-    produto: Optional[ProdutoResponse] = None 
+    produto: ProdutoResponse | None = None 
     quantidade: int
     preco_unitario: float # Preço histórico (do momento da compra)
 
@@ -34,6 +33,6 @@ class PedidoResponse(BaseModel):
     
     # Aqui está o truque para o Req A:
     # Se carregarmos o link, o Beanie preenche este campo.
-    cliente: Optional[ClienteResponse] = None
+    cliente: ClienteResponse | None = None
     
-    itens: List[ItemPedidoResponse]
+    itens: list[ItemPedidoResponse]

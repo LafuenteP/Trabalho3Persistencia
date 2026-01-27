@@ -1,4 +1,3 @@
-from typing import List, Optional
 from fastapi import APIRouter
 from datetime import datetime
 
@@ -78,7 +77,7 @@ async def calcular_ticket_medio():
 
 # --- REQUISITO D/F: Listar pedidos por Ano e Mês ---
 @router.get("/pedidos-por-periodo")
-async def listar_pedidos_por_data(ano: int, mes: Optional[int] = None):
+async def listar_pedidos_por_data(ano: int, mes: int | None = None):
     """
     Lista pedidos filtrados por Ano e opcionalmente por Mês.
     Usa Aggregation com $expr para extrair partes da data.
@@ -119,6 +118,70 @@ async def listar_pedidos_por_data(ano: int, mes: Optional[int] = None):
     collection = Pedido.get_motor_collection()
     cursor = collection.aggregate(pipeline)
     resultado = await cursor.to_list(length=None)
+    return resultado
+
+
+# --- REQUISITO G: Consulta complexa multi-coleções (Vendas por Categoria) ---
+@router.get("/vendas-por-categoria")
+async def relatorio_vendas_por_categoria():
+    """
+    REQ G: Consulta complexa envolvendo múltiplas coleções (Pedidos + Produtos).
+    Retorna o total faturado agrupado por categoria de produto.
+    """
+    pipeline = [
+        # 1. Filtra apenas pedidos que não foram cancelados (Boa prática)
+        {
+            "$match": {"status": {"$ne": "CANCELADO"}}
+        },
+        # 2. Desconstrói o array 'itens'. 
+        # Se um pedido tem 3 itens, ele transforma-se em 3 documentos na memória.
+        {
+            "$unwind": "$itens"
+        },
+        # 3. Faz o JOIN com a coleção 'produtos'.
+        # Liga o ID guardado em 'itens.produto.$id' com o '_id' da coleção 'produtos'.
+        {
+            "$lookup": {
+                "from": "produtos",          # Nome da coleção alvo no Mongo
+                "localField": "itens.produto.$id", # Onde está o ID no Pedido
+                "foreignField": "_id",       # Onde está o ID no Produto
+                "as": "detalhes_produto"     # Onde guardar o resultado
+            }
+        },
+        # 4. O $lookup retorna um array (mesmo sendo 1:1), fazemos unwind para o tornar objeto
+        {
+            "$unwind": "$detalhes_produto"
+        },
+        # 5. Agrupa pela Categoria do Produto e soma o valor total
+        {
+            "$group": {
+                "_id": "$detalhes_produto.categoria",
+                "total_vendido": {
+                    "$sum": {
+                        "$multiply": ["$itens.quantidade", "$itens.preco_unitario"]
+                    }
+                },
+                "quantidade_itens": {"$sum": "$itens.quantidade"}
+            }
+        },
+        # 6. (Opcional) Ordena do que vendeu mais para o que vendeu menos
+        {
+            "$sort": {"total_vendido": -1}
+        },
+        # 7. (Opcional) Formata a saída para ficar bonita no JSON
+        {
+            "$project": {
+                "_id": 0,
+                "categoria": "$_id",
+                "total_vendido": 1,
+                "quantidade_itens": 1
+            }
+        }
+    ]
+
+    # Executa a agregação diretamente no modelo Pedido
+    resultado = await Pedido.aggregate(pipeline).to_list()
+    
     return resultado
 
 
