@@ -1,7 +1,9 @@
 from fastapi import APIRouter, HTTPException, status, Query
 from app.models.produto import Produto
 from app.schemas.produto import ProdutoCreate, ProdutoUpdate
+from app.schemas.pedido import PaginatedResponse
 from beanie import PydanticObjectId
+import math
 
 router = APIRouter(prefix="/produtos", tags=["Produtos"])
 
@@ -12,14 +14,16 @@ async def criar_produto(dados: ProdutoCreate):
     await novo_produto.insert()
     return novo_produto
 
-@router.get("/", response_model=list[Produto])
+@router.get("/", response_model=PaginatedResponse[Produto])
 async def listar_produtos(
+    page: int = Query(1, ge=1, description="Número da página"),
+    page_size: int = Query(10, ge=1, le=100, description="Itens por página"),
     termo: str | None = Query(None, description="Busca por nome"),
     categoria: str | None = Query(None, description="Filtro por categoria"),
     min_preco: float | None = Query(None, description="Preço mínimo", gt=0),
     max_preco: float | None = Query(None, description="Preço máximo", gt=0)
 ):
-    """Lista produtos com filtros opcionais."""
+    """Lista produtos com filtros opcionais e paginação."""
     query = Produto.find_all()
     
     if termo:
@@ -33,8 +37,24 @@ async def listar_produtos(
     
     if max_preco:
         query = query.find(Produto.preco <= max_preco)
-        
-    return await query.to_list()
+    
+    # Conta total de documentos que correspondem aos filtros
+    total_items = await query.count()
+    total_pages = math.ceil(total_items / page_size) if total_items > 0 else 1
+    
+    # Calcula o skip para a paginação
+    skip = (page - 1) * page_size
+    
+    # Aplica paginação
+    produtos = await query.skip(skip).limit(page_size).to_list()
+    
+    return PaginatedResponse(
+        items=produtos,
+        page=page,
+        page_size=page_size,
+        total_items=total_items,
+        total_pages=total_pages
+    )
 
 @router.get("/{id}", response_model=Produto)
 async def obter_produto(id: PydanticObjectId):

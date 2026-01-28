@@ -1,9 +1,11 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Query
 from beanie import PydanticObjectId
 from pymongo.errors import DuplicateKeyError
+import math
 
 from app.models.cliente import Cliente
 from app.schemas.cliente import ClienteCreate, ClienteResponse, ClienteUpdate
+from app.schemas.pedido import PaginatedResponse
 
 router = APIRouter(prefix="/clientes", tags=["Clientes"])
 
@@ -25,11 +27,29 @@ async def criar_cliente(dados: ClienteCreate):
     
     return novo_cliente
 
-@router.get("/", response_model=list[ClienteResponse])
-async def listar_clientes():
-    """Retorna todos os clientes cadastrados."""
-    clientes = await Cliente.find_all().to_list()
-    return clientes
+@router.get("/", response_model=PaginatedResponse[ClienteResponse])
+async def listar_clientes(
+    page: int = Query(1, ge=1, description="Número da página"),
+    page_size: int = Query(10, ge=1, le=100, description="Itens por página")
+):
+    """Retorna todos os clientes cadastrados com paginação."""
+    # Conta total de documentos
+    total_items = await Cliente.count()
+    total_pages = math.ceil(total_items / page_size) if total_items > 0 else 1
+    
+    # Calcula o skip para a paginação
+    skip = (page - 1) * page_size
+    
+    # Busca clientes com paginação
+    clientes = await Cliente.find_all().skip(skip).limit(page_size).to_list()
+    
+    return PaginatedResponse(
+        items=clientes,
+        page=page,
+        page_size=page_size,
+        total_items=total_items,
+        total_pages=total_pages
+    )
 
 @router.get("/{id}", response_model=ClienteResponse)
 async def obter_cliente(id: PydanticObjectId):
